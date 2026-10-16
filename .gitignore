@@ -4,6 +4,9 @@
 04_dashboard/*.html
 !04_dashboard/*_demo.html
 
+# примеры результатов нужны в репозитории — по ним судят о проекте
+!examples/
+
 # служебное
 __pycache__/
 *.pyc
