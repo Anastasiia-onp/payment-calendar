@@ -1,0 +1,832 @@
+<title>Платёжный календарь</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --ground: #F4F6F9;
+  --surface: #FFFFFF;
+  --surface-sunk: #EDF1F6;
+  --ink: #16202E;
+  --muted: #5E6B7E;
+  --faint: #8A97A8;
+  --line: #DBE2EB;
+  --line-strong: #C3CEDC;
+  --accent: #A8701F;
+  --accent-soft: #F2E6D2;
+  --critical: #AF2318;
+  --critical-soft: #FBE3E0;
+  --warn: #B07C10;
+  --warn-soft: #FAEFD4;
+  --ok: #276F52;
+  --ok-soft: #DEEFE6;
+  --shadow: 0 1px 2px rgba(22, 32, 46, .06), 0 4px 16px rgba(22, 32, 46, .05);
+}
+:root:not([data-theme="light"]) {
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0E131A;
+    --surface: #161D26;
+    --surface-sunk: #1C2530;
+    --ink: #E7ECF3;
+    --muted: #9AA7B8;
+    --faint: #768395;
+    --line: #27313E;
+    --line-strong: #374454;
+    --accent: #D9A441;
+    --accent-soft: #33281A;
+    --critical: #E8705F;
+    --critical-soft: #3A1E1A;
+    --warn: #DBA62C;
+    --warn-soft: #332814;
+    --ok: #5DBF93;
+    --ok-soft: #14301F;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0E131A;
+  --surface: #161D26;
+  --surface-sunk: #1C2530;
+  --ink: #E7ECF3;
+  --muted: #9AA7B8;
+  --faint: #768395;
+  --line: #27313E;
+  --line-strong: #374454;
+  --accent: #D9A441;
+  --accent-soft: #33281A;
+  --critical: #E8705F;
+  --critical-soft: #3A1E1A;
+  --warn: #DBA62C;
+  --warn-soft: #332814;
+  --ok: #5DBF93;
+  --ok-soft: #14301F;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-inline: 20px;
+  padding-block: 28px 56px;
+}
+
+/* ---------- шапка ---------- */
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--ink);
+}
+h1 {
+  font-family: Bitter, Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.1;
+  margin: 0;
+  text-wrap: balance;
+}
+.masthead .sub {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.meta {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.meta div { display: flex; flex-direction: column; gap: 2px; }
+.meta dt, .meta .k {
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.meta .v {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+/* ---------- вердикт ---------- */
+.verdict {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.verdict .stripe { background: var(--critical); }
+.verdict.is-ok .stripe { background: var(--ok); }
+.verdict .body { padding: 16px 18px 17px 2px; }
+.verdict h2 {
+  font-family: Bitter, Georgia, serif;
+  font-size: 18px;
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.verdict p { margin: 0; color: var(--muted); font-size: 14px; max-width: 72ch; }
+
+/* ---------- плитки ---------- */
+.tiles {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tile { background: var(--surface); padding: 15px 17px 16px; }
+.tile .k {
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-size: 10.5px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 7px;
+}
+.tile .v {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -.02em;
+  display: block;
+  line-height: 1.15;
+}
+.tile .n { margin-top: 5px; font-size: 12.5px; color: var(--muted); }
+.v.neg { color: var(--critical); }
+.v.pos { color: var(--ok); }
+
+/* ---------- панель управления ---------- */
+.panel {
+  margin-top: 26px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+}
+.panel > header {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.panel h2 {
+  font-family: Bitter, Georgia, serif;
+  font-size: 16px;
+  margin: 0;
+  font-weight: 600;
+}
+.panel .hint { font-size: 12.5px; color: var(--muted); }
+.controls {
+  padding: 16px 18px 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 18px 26px;
+  align-items: start;
+}
+.ctl label.lead {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 8px;
+}
+.ctl .readout {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 17px;
+  display: block;
+  margin-bottom: 7px;
+}
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--faint);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  margin-top: 2px;
+}
+select, button {
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: var(--surface-sunk);
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  padding: 7px 10px;
+}
+button { cursor: pointer; }
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+/* на светлом фоне акцент тёмный — текст белый; в тёмной теме акцент светлый */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) button.primary { color: #10151C; }
+}
+:root[data-theme="dark"] button.primary { color: #10151C; }
+button:focus-visible, select:focus-visible, input:focus-visible,
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toggle { display: flex; align-items: center; gap: 9px; font-size: 13.5px; }
+.toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+/* ---------- график ---------- */
+.chart-block { margin-top: 26px; }
+.chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.chart-head h2 {
+  font-family: Bitter, Georgia, serif;
+  font-size: 19px;
+  margin: 0;
+  font-weight: 600;
+}
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.swatch.box { height: 11px; width: 11px; border-radius: 2px; }
+.chart-frame {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+  padding: 14px 10px 8px;
+  overflow-x: auto;
+}
+#chart { display: block; width: 100%; min-width: 640px; height: auto; }
+
+/* ---------- таблица ---------- */
+.table-wrap {
+  margin-top: 26px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 13.5px; }
+caption {
+  text-align: left;
+  font-family: Bitter, Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 18px 11px;
+}
+th, td { padding: 9px 14px; border-top: 1px solid var(--line); text-align: right; }
+th:first-child, td:first-child,
+th:nth-child(2), td:nth-child(2) { text-align: left; }
+thead th {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--faint);
+  font-weight: 600;
+  border-top: none;
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+tbody td.num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+tbody tr.gap { background: var(--critical-soft); }
+tbody tr.warn { background: var(--warn-soft); }
+.pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.pill.gap { background: var(--critical); color: #fff; }
+.pill.warn { background: var(--warn); color: #fff; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+
+/* ---------- переносы ---------- */
+.moves { margin-top: 26px; }
+.moves h2 {
+  font-family: Bitter, Georgia, serif;
+  font-size: 19px;
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.moves > p { margin: 0 0 14px; color: var(--muted); font-size: 13.5px; max-width: 74ch; }
+.move-list { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 3px; }
+.move {
+  background: var(--surface);
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 22px 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+}
+.move.on { background: var(--accent-soft); }
+.move .who { font-weight: 500; }
+.move .what { color: var(--muted); font-size: 12.5px; }
+.move .amt {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.move input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); }
+.empty { padding: 16px; color: var(--muted); font-size: 13.5px; background: var(--surface); }
+
+footer {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 560px) {
+  .move { grid-template-columns: 22px 1fr; }
+  .move .amt, .move select { grid-column: 2; justify-self: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <h1>Платёжный календарь</h1>
+      <p class="sub" id="company"></p>
+    </div>
+    <div class="meta">
+      <div><span class="k">Горизонт</span><span class="v" id="m-horizon"></span></div>
+      <div><span class="k">Остаток на старте</span><span class="v" id="m-start"></span></div>
+      <div><span class="k">Свободный лимит</span><span class="v" id="m-credit"></span></div>
+      <div><span class="k">Расчёт</span><span class="v" id="m-date"></span></div>
+    </div>
+  </header>
+
+  <section class="verdict" id="verdict">
+    <div class="stripe"></div>
+    <div class="body">
+      <h2 id="verdict-title"></h2>
+      <p id="verdict-text"></p>
+    </div>
+  </section>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="panel">
+    <header>
+      <h2>Что если</h2>
+      <span class="hint">Меняйте условия — расчёт пересчитывается сразу</span>
+    </header>
+    <div class="controls">
+      <div class="ctl">
+        <label class="lead" for="balance">Остаток на старте</label>
+        <span class="readout" id="balance-out"></span>
+        <input type="range" id="balance" step="50000">
+        <div class="scale"><span id="balance-min"></span><span id="balance-max"></span></div>
+      </div>
+      <div class="ctl">
+        <label class="lead" for="project">Проект</label>
+        <select id="project"></select>
+      </div>
+      <div class="ctl">
+        <label class="lead" for="credit">Кредитный лимит</label>
+        <div class="toggle">
+          <input type="checkbox" id="credit">
+          <label for="credit">Показывать линию с учётом лимита</label>
+        </div>
+      </div>
+      <div class="ctl">
+        <label class="lead" for="reset">Сброс</label>
+        <button class="primary" id="reset" type="button">Вернуть исходный расчёт</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="chart-block">
+    <div class="chart-head">
+      <h2>Остаток денежных средств</h2>
+      <div class="legend">
+        <span><i class="swatch" style="background: var(--accent)"></i>остаток на конец недели</span>
+        <span><i class="swatch" style="background: var(--ok)"></i>поступления</span>
+        <span><i class="swatch" style="background: var(--muted)"></i>платежи</span>
+        <span><i class="swatch box" style="background: var(--critical-soft); border: 1px solid var(--critical)"></i>дефицит</span>
+      </div>
+    </div>
+    <div class="chart-frame">
+      <svg id="chart" viewBox="0 0 980 380" role="img" aria-labelledby="chart-title">
+        <title id="chart-title">График остатка денежных средств по неделям</title>
+      </svg>
+    </div>
+  </section>
+
+  <div class="table-wrap">
+    <table>
+      <caption>Недели прогноза</caption>
+      <thead>
+        <tr>
+          <th scope="col">Нед.</th>
+          <th scope="col">Начало</th>
+          <th scope="col">Поступления</th>
+          <th scope="col">Платежи</th>
+          <th scope="col">Чистый поток</th>
+          <th scope="col">Остаток на конец</th>
+          <th scope="col">Состояние</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <section class="moves">
+    <h2>Чем закрыть разрыв</h2>
+    <p>Платежи приоритета 3 можно сдвинуть без штрафов и просрочек. Отметьте те,
+      которые готовы перенести, и выберите, на сколько недель — график пересчитается.</p>
+    <div class="move-list" id="moves"></div>
+  </section>
+
+  <footer>
+    <span id="foot-source"></span>
+    <span>Суммы в рублях. Расчёт по данным реестра обязательств.</span>
+  </footer>
+</div>
+
+<script>
+const DATA = {"company":"Демо-компания (условные данные)","calcDate":"2026-10-16","balance":2850000,"creditFree":6000000,"threshold":500000.0,"source":"обезличенные демо-данные","weeks":[{"n":1,"from":"2026-10-19","to":"2026-10-25"},{"n":2,"from":"2026-10-26","to":"2026-11-01"},{"n":3,"from":"2026-11-02","to":"2026-11-08"},{"n":4,"from":"2026-11-09","to":"2026-11-15"},{"n":5,"from":"2026-11-16","to":"2026-11-22"},{"n":6,"from":"2026-11-23","to":"2026-11-29"},{"n":7,"from":"2026-11-30","to":"2026-12-06"},{"n":8,"from":"2026-12-07","to":"2026-12-13"},{"n":9,"from":"2026-12-14","to":"2026-12-20"},{"n":10,"from":"2026-12-21","to":"2026-12-27"},{"n":11,"from":"2026-12-28","to":"2027-01-03"},{"n":12,"from":"2027-01-04","to":"2027-01-10"},{"n":13,"from":"2027-01-11","to":"2027-01-17"}],"rows":[{"id":1,"type":"Поступление","project":"Объект 1 — ТЦ, остекление","contractor":"Заказчик 1","basis":"Договор 14/2026, окончательный расчёт","article":"Поступления от заказчиков","amount":1800000.0,"date":"2026-10-23","week":1,"priority":0},{"id":2,"type":"Поступление","project":"Объект 2 — БЦ, фасад","contractor":"Заказчик 2","basis":"Договор 21/2026, аванс 30%","article":"Поступления от заказчиков","amount":4200000.0,"date":"2026-11-06","week":3,"priority":0},{"id":3,"type":"Поступление","project":"Объект 3 — склад, окна","contractor":"Заказчик 3","basis":"Договор 19/2026, этап 1","article":"Поступления от заказчиков","amount":3200000.0,"date":"2026-11-20","week":5,"priority":0},{"id":4,"type":"Поступление","project":"Объект 3 — склад, окна","contractor":"Заказчик 4","basis":"Договор 24/2026, аванс 40%","article":"Поступления от заказчиков","amount":3600000.0,"date":"2026-12-02","week":7,"priority":0},{"id":5,"type":"Поступление","project":"Объект 2 — БЦ, фасад","contractor":"Заказчик 2","basis":"Договор 21/2026, этап 2","article":"Поступления от заказчиков","amount":5200000.0,"date":"2026-12-11","week":8,"priority":0},{"id":6,"type":"Поступление","project":"Объект 3 — склад, окна","contractor":"Заказчик 3","basis":"Договор 19/2026, этап 2","article":"Поступления от заказчиков","amount":4100000.0,"date":"2026-12-16","week":9,"priority":0},{"id":7,"type":"Поступление","project":"Объект 1 — ТЦ, остекление","contractor":"Заказчик 5","basis":"Договор 23/2026, аванс","article":"Поступления от заказчиков","amount":2800000.0,"date":"2026-12-25","week":10,"priority":0},{"id":8,"type":"Поступление","project":"Объект 1 — ТЦ, остекление","contractor":"Заказчик 5","basis":"Договор 23/2026, этап 1","article":"Поступления от заказчиков","amount":2300000.0,"date":"2027-01-05","week":12,"priority":0},{"id":9,"type":"Поступление","project":"Объект 1 — ТЦ, остекление","contractor":"Заказчик 1","basis":"Доп. соглашение 2","article":"Поступления от заказчиков","amount":650000.0,"date":"2027-01-16","week":13,"priority":0},{"id":10,"type":"Платёж","project":"Общие","contractor":"Персонал","basis":"Зарплата за октябрь","article":"ФОТ","amount":1500000.0,"date":"2026-11-05","week":3,"priority":1},{"id":11,"type":"Платёж","project":"Общие","contractor":"Персонал","basis":"Зарплата за ноябрь","article":"ФОТ","amount":1500000.0,"date":"2026-12-04","week":7,"priority":1},{"id":12,"type":"Платёж","project":"Общие","contractor":"Персонал","basis":"Зарплата за декабрь","article":"ФОТ","amount":1620000.0,"date":"2027-01-12","week":13,"priority":1},{"id":13,"type":"Платёж","project":"Общие","contractor":"ФНС","basis":"НДС за III квартал, 1/3","article":"Налоги","amount":1150000.0,"date":"2026-10-28","week":2,"priority":1},{"id":14,"type":"Платёж","project":"Общие","contractor":"ФНС","basis":"Налог на прибыль за 9 месяцев","article":"Налоги","amount":480000.0,"date":"2026-10-28","week":2,"priority":1},{"id":15,"type":"Платёж","project":"Общие","contractor":"ФНС","basis":"НДС за III квартал, 2/3","article":"Налоги","amount":1150000.0,"date":"2026-11-28","week":6,"priority":1},{"id":16,"type":"Платёж","project":"Общие","contractor":"ФНС","basis":"НДС за III квартал, 3/3","article":"Налоги","amount":1150000.0,"date":"2026-12-28","week":11,"priority":1},{"id":17,"type":"Платёж","project":"Общие","contractor":"ФНС","basis":"Страховые взносы за октябрь","article":"Страховые взносы","amount":870000.0,"date":"2026-10-28","week":2,"priority":1},{"id":18,"type":"Платёж","project":"Общие","contractor":"ФНС","basis":"Страховые взносы за ноябрь","article":"Страховые взносы","amount":870000.0,"date":"2026-11-28","week":6,"priority":1},{"id":19,"type":"Платёж","project":"Общие","contractor":"ФНС","basis":"Страховые взносы за декабрь","article":"Страховые взносы","amount":890000.0,"date":"2026-12-28","week":11,"priority":1},{"id":20,"type":"Платёж","project":"Объект 2 — БЦ, фасад","contractor":"Подрядчик 1","basis":"Монтажные работы, этап 1","article":"Подрядчики","amount":1850000.0,"date":"2026-11-12","week":4,"priority":2},{"id":21,"type":"Платёж","project":"Объект 2 — БЦ, фасад","contractor":"Подрядчик 1","basis":"Монтажные работы, этап 2","article":"Подрядчики","amount":1600000.0,"date":"2026-11-26","week":6,"priority":2},{"id":22,"type":"Платёж","project":"Объект 3 — склад, окна","contractor":"Подрядчик 2","basis":"Демонтаж и подготовка","article":"Подрядчики","amount":740000.0,"date":"2026-12-03","week":7,"priority":2},{"id":23,"type":"Платёж","project":"Объект 2 — БЦ, фасад","contractor":"Подрядчик 1","basis":"Монтажные работы, этап 3","article":"Подрядчики","amount":1900000.0,"date":"2026-12-22","week":10,"priority":2},{"id":24,"type":"Платёж","project":"Объект 1 — ТЦ, остекление","contractor":"Поставщик 1","basis":"Стеклопакеты, партия 1","article":"Материалы","amount":900000.0,"date":"2026-10-29","week":2,"priority":2},{"id":25,"type":"Платёж","project":"Объект 2 — БЦ, фасад","contractor":"Поставщик 2","basis":"Алюминиевый профиль","article":"Материалы","amount":900000.0,"date":"2026-11-19","week":5,"priority":2},{"id":26,"type":"Платёж","project":"Объект 2 — БЦ, фасад","contractor":"Поставщик 1","basis":"Стеклопакеты, партия 2","article":"Материалы","amount":1340000.0,"date":"2026-12-09","week":8,"priority":2},{"id":27,"type":"Платёж","project":"Объект 3 — склад, окна","contractor":"Поставщик 3","basis":"Фурнитура и крепёж","article":"Материалы","amount":380000.0,"date":"2026-12-23","week":10,"priority":2},{"id":28,"type":"Платёж","project":"Общие","contractor":"Банк 1","basis":"Погашение части кредитной линии","article":"Погашение кредита","amount":500000.0,"date":"2027-01-15","week":13,"priority":1},{"id":29,"type":"Платёж","project":"Объект 3 — склад, окна","contractor":"Прочие","basis":"Командировка на объект","article":"Командировки","amount":140000.0,"date":"2026-11-13","week":4,"priority":3},{"id":30,"type":"Платёж","project":"Общие","contractor":"Прочие","basis":"Обучение сотрудников","article":"Прочие расходы","amount":210000.0,"date":"2026-12-04","week":7,"priority":3},{"id":31,"type":"Платёж","project":"Общие","contractor":"Персонал","basis":"Аванс за октябрь","article":"ФОТ","amount":1450000.0,"date":"2026-10-20","week":1,"priority":1},{"id":32,"type":"Платёж","project":"Общие","contractor":"Банк 1","basis":"Проценты по кредитной линии, октябрь","article":"Проценты по кредитам","amount":32500.0,"date":"2026-10-30","week":2,"priority":1},{"id":33,"type":"Платёж","project":"Общие","contractor":"Прочие","basis":"Связь, ПО, канцелярия","article":"Прочие расходы","amount":95000.0,"date":"2026-10-30","week":2,"priority":3},{"id":34,"type":"Платёж","project":"Общие","contractor":"Арендодатель 1","basis":"Аренда офиса и склада, ноябрь","article":"Аренда","amount":320000.0,"date":"2026-11-05","week":3,"priority":2},{"id":35,"type":"Платёж","project":"Общие","contractor":"Лизингодатель 1","basis":"Лизинг автовышки","article":"Лизинг","amount":185000.0,"date":"2026-11-13","week":4,"priority":2},{"id":36,"type":"Платёж","project":"Общие","contractor":"Персонал","basis":"Аванс за ноябрь","article":"ФОТ","amount":1450000.0,"date":"2026-11-20","week":5,"priority":1},{"id":37,"type":"Платёж","project":"Общие","contractor":"Банк 1","basis":"Проценты по кредитной линии, ноябрь","article":"Проценты по кредитам","amount":32500.0,"date":"2026-11-30","week":7,"priority":1},{"id":38,"type":"Платёж","project":"Общие","contractor":"Прочие","basis":"Связь, ПО, канцелярия","article":"Прочие расходы","amount":95000.0,"date":"2026-11-30","week":7,"priority":3},{"id":39,"type":"Платёж","project":"Общие","contractor":"Арендодатель 1","basis":"Аренда офиса и склада, декабрь","article":"Аренда","amount":320000.0,"date":"2026-12-04","week":7,"priority":2},{"id":40,"type":"Платёж","project":"Общие","contractor":"Лизингодатель 1","basis":"Лизинг автовышки","article":"Лизинг","amount":185000.0,"date":"2026-12-15","week":9,"priority":2},{"id":41,"type":"Платёж","project":"Общие","contractor":"Персонал","basis":"Аванс за декабрь","article":"ФОТ","amount":1450000.0,"date":"2026-12-18","week":9,"priority":1},{"id":42,"type":"Платёж","project":"Общие","contractor":"Банк 1","basis":"Проценты по кредитной линии, декабрь","article":"Проценты по кредитам","amount":32500.0,"date":"2026-12-30","week":11,"priority":1},{"id":43,"type":"Платёж","project":"Общие","contractor":"Прочие","basis":"Связь, ПО, канцелярия","article":"Прочие расходы","amount":95000.0,"date":"2026-12-30","week":11,"priority":3},{"id":44,"type":"Платёж","project":"Общие","contractor":"Арендодатель 1","basis":"Аренда офиса и склада, январь","article":"Аренда","amount":320000.0,"date":"2026-12-31","week":11,"priority":2},{"id":45,"type":"Платёж","project":"Общие","contractor":"Лизингодатель 1","basis":"Лизинг автовышки","article":"Лизинг","amount":185000.0,"date":"2027-01-15","week":13,"priority":2}]};
+
+const fmt = (v) => {
+  const sign = v < 0 ? "−" : "";
+  return sign + Math.abs(Math.round(v)).toLocaleString("ru-RU") + " ₽";
+};
+const fmtShort = (v) => {
+  const a = Math.abs(v), sign = v < 0 ? "−" : "";
+  if (a >= 1e6) return sign + (a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(".", ",") + " млн";
+  if (a >= 1e3) return sign + Math.round(a / 1e3) + " тыс";
+  return sign + Math.round(a);
+};
+const dmy = (iso) => {
+  const [y, m, d] = iso.split("-");
+  return d + "." + m + "." + y;
+};
+const dm = (iso) => { const [, m, d] = iso.split("-"); return d + "." + m; };
+
+const state = {
+  balance: DATA.balance,
+  project: "__all__",
+  credit: false,
+  moves: {}
+};
+
+/* ---------- расчёт ---------- */
+function rowsInScope() {
+  return DATA.rows.filter(r => state.project === "__all__" || r.project === state.project);
+}
+
+function weekOf(row) {
+  const shift = state.moves[row.id] || 0;
+  return Math.min(row.week + shift, DATA.weeks.length);
+}
+
+function compute() {
+  const weeks = DATA.weeks.map(w => ({
+    n: w.n, from: w.from, to: w.to, income: 0, outcome: 0, opening: 0, closing: 0
+  }));
+  for (const r of rowsInScope()) {
+    const idx = weekOf(r) - 1;
+    if (idx < 0 || idx >= weeks.length) continue;
+    if (r.type === "Поступление") weeks[idx].income += r.amount;
+    else weeks[idx].outcome += r.amount;
+  }
+  let running = state.balance;
+  for (const w of weeks) {
+    w.opening = running;
+    running += w.income - w.outcome;
+    w.closing = running;
+  }
+  return weeks;
+}
+
+function summarize(weeks) {
+  const min = weeks.reduce((a, w) => w.closing < a.closing ? w : a, weeks[0]);
+  const gaps = weeks.filter(w => w.closing < 0);
+  const low = weeks.filter(w => w.closing >= 0 && w.closing < DATA.threshold);
+  return {
+    min, gaps, low,
+    first: gaps[0] || null,
+    income: weeks.reduce((s, w) => s + w.income, 0),
+    outcome: weeks.reduce((s, w) => s + w.outcome, 0),
+    closing: weeks[weeks.length - 1].closing
+  };
+}
+
+/* ---------- отрисовка ---------- */
+function renderVerdict(s) {
+  const box = document.getElementById("verdict");
+  const title = document.getElementById("verdict-title");
+  const text = document.getElementById("verdict-text");
+  if (!s.first) {
+    box.classList.add("is-ok");
+    title.textContent = "Кассовых разрывов нет";
+    text.textContent = s.low.length
+      ? "Остаток держится выше нуля, но в " + s.low.length + " нед. опускается ниже порога тревоги "
+        + fmt(DATA.threshold) + ". Запас на непредвиденные платежи минимальный."
+      : "Остаток во всех неделях горизонта выше порога тревоги. Прогноз спокойный.";
+    return;
+  }
+  box.classList.remove("is-ok");
+  const deficit = Math.abs(s.min.closing);
+  const covered = deficit <= DATA.creditFree;
+  title.textContent = "Первый разрыв — неделя " + s.first.n + ", " + dmy(s.first.from);
+  text.textContent = "Недель с отрицательным остатком: " + s.gaps.length
+    + ". Максимальная нехватка " + fmt(deficit) + " на неделе " + s.min.n + " (" + dmy(s.min.from) + "). "
+    + (covered
+      ? "Свободный кредитный лимит " + fmt(DATA.creditFree) + " покрывает разрыв — но это платные деньги."
+      : "Свободного лимита " + fmt(DATA.creditFree) + " не хватает: нужен перенос платежей или ускорение поступлений.");
+}
+
+function renderTiles(s) {
+  const tiles = [
+    { k: "Минимальный остаток", v: fmt(s.min.closing), cls: s.min.closing < 0 ? "neg" : "pos",
+      n: "неделя " + s.min.n + ", " + dmy(s.min.from) },
+    { k: "Первый разрыв", v: s.first ? dmy(s.first.from) : "нет",
+      cls: s.first ? "neg" : "pos",
+      n: s.first ? "неделя " + s.first.n + " из " + DATA.weeks.length : "за весь горизонт" },
+    { k: "Недель в дефиците", v: s.gaps.length + " из " + DATA.weeks.length,
+      cls: s.gaps.length ? "neg" : "pos",
+      n: s.low.length ? "ещё " + s.low.length + " ниже порога" : "ниже порога нет" },
+    { k: "Остаток на конец", v: fmt(s.closing), cls: s.closing < 0 ? "neg" : "pos",
+      n: "чистый поток " + fmt(s.income - s.outcome) }
+  ];
+  document.getElementById("tiles").innerHTML = tiles.map(t =>
+    '<div class="tile"><span class="k">' + t.k + '</span>'
+    + '<span class="v ' + t.cls + '">' + t.v + '</span>'
+    + '<div class="n">' + t.n + '</div></div>').join("");
+}
+
+function renderTable(weeks) {
+  document.getElementById("tbody").innerHTML = weeks.map(w => {
+    const gap = w.closing < 0;
+    const low = !gap && w.closing < DATA.threshold;
+    const pill = gap ? '<span class="pill gap">разрыв</span>'
+      : low ? '<span class="pill warn">ниже порога</span>'
+      : '<span class="pill ok">норма</span>';
+    return '<tr class="' + (gap ? "gap" : low ? "warn" : "") + '">'
+      + '<td>' + w.n + '</td>'
+      + '<td>' + dmy(w.from) + '</td>'
+      + '<td class="num">' + (w.income ? fmt(w.income) : "—") + '</td>'
+      + '<td class="num">' + (w.outcome ? fmt(w.outcome) : "—") + '</td>'
+      + '<td class="num">' + fmt(w.income - w.outcome) + '</td>'
+      + '<td class="num">' + fmt(w.closing) + '</td>'
+      + '<td>' + pill + '</td></tr>';
+  }).join("");
+}
+
+function renderChart(weeks) {
+  const svg = document.getElementById("chart");
+  const W = 980, H = 380;
+  const pad = { t: 22, r: 18, b: 46, l: 92 };
+  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+
+  const line = weeks.map(w => w.closing);
+  const credited = weeks.map(w => w.closing + DATA.creditFree);
+  const bars = weeks.map(w => Math.max(w.income, w.outcome));
+  const values = line.concat(bars, [0], state.credit ? credited : []);
+  let lo = Math.min(...values), hi = Math.max(...values);
+  const span = (hi - lo) || 1;
+  lo -= span * 0.1; hi += span * 0.1;
+
+  // круглые деления шкалы: шаг кратен 0,5 / 1 / 2 / 5 млн
+  const ticks = 5;
+  const raw = (hi - lo) / ticks;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw) || mag * 10;
+  lo = Math.floor(lo / step) * step;
+  hi = lo + step * ticks;
+  while (hi < Math.max(...values)) hi += step;
+
+  const x = (i) => pad.l + (iw / weeks.length) * (i + 0.5);
+  const y = (v) => pad.t + ih - ((v - lo) / (hi - lo)) * ih;
+  const bw = Math.min(16, (iw / weeks.length) * 0.3);
+
+  let out = "";
+
+  // горизонтальная сетка
+  const steps = Math.round((hi - lo) / step);
+  for (let i = 0; i <= steps; i++) {
+    const v = lo + step * i;
+    const yy = y(v);
+    out += '<line x1="' + pad.l + '" y1="' + yy + '" x2="' + (W - pad.r) + '" y2="' + yy
+      + '" stroke="var(--line)" stroke-width="1"/>';
+    out += '<text x="' + (pad.l - 10) + '" y="' + (yy + 4)
+      + '" text-anchor="end" font-size="11" fill="var(--faint)"'
+      + ' font-family="IBM Plex Mono, monospace">' + fmtShort(v) + '</text>';
+  }
+
+  // зона дефицита: от нулевой линии вниз
+  const y0 = y(0);
+  if (lo < 0) {
+    out += '<rect x="' + pad.l + '" y="' + y0 + '" width="' + iw + '" height="' + (pad.t + ih - y0)
+      + '" fill="var(--critical-soft)" opacity="0.55"/>';
+  }
+  out += '<line x1="' + pad.l + '" y1="' + y0 + '" x2="' + (W - pad.r) + '" y2="' + y0
+    + '" stroke="var(--critical)" stroke-width="1.5" stroke-dasharray="5 4"/>';
+
+  // столбцы поступлений и платежей
+  weeks.forEach((w, i) => {
+    const cx = x(i);
+    if (w.income) {
+      out += '<rect x="' + (cx - bw - 1) + '" y="' + y(Math.max(w.income, 0)) + '" width="' + bw
+        + '" height="' + Math.max(1, y(0) - y(w.income)) + '" fill="var(--ok)" opacity="0.28" rx="1"/>';
+    }
+    if (w.outcome) {
+      out += '<rect x="' + (cx + 1) + '" y="' + y(w.outcome) + '" width="' + bw
+        + '" height="' + Math.max(1, y(0) - y(w.outcome)) + '" fill="var(--muted)" opacity="0.26" rx="1"/>';
+    }
+  });
+
+  // линия с учётом лимита
+  if (state.credit) {
+    const dCredit = credited.map((v, i) => (i ? "L" : "M") + x(i) + " " + y(v)).join(" ");
+    out += '<path d="' + dCredit + '" fill="none" stroke="var(--ok)" stroke-width="1.6"'
+      + ' stroke-dasharray="6 4" opacity="0.85"/>';
+  }
+
+  // основная линия остатка
+  const d = line.map((v, i) => (i ? "L" : "M") + x(i) + " " + y(v)).join(" ");
+  out += '<path d="' + d + '" fill="none" stroke="var(--accent)" stroke-width="2.5"'
+    + ' stroke-linejoin="round" stroke-linecap="round"/>';
+
+  // точки и подписи недель
+  weeks.forEach((w, i) => {
+    const neg = w.closing < 0;
+    out += '<circle cx="' + x(i) + '" cy="' + y(w.closing) + '" r="' + (neg ? 5 : 3.5)
+      + '" fill="' + (neg ? "var(--critical)" : "var(--surface)") + '"'
+      + ' stroke="' + (neg ? "var(--critical)" : "var(--accent)") + '" stroke-width="2"/>';
+    out += '<text x="' + x(i) + '" y="' + (H - 26) + '" text-anchor="middle" font-size="11"'
+      + ' fill="var(--muted)" font-family="IBM Plex Mono, monospace">' + dm(w.from) + '</text>';
+    out += '<text x="' + x(i) + '" y="' + (H - 11) + '" text-anchor="middle" font-size="10"'
+      + ' fill="var(--faint)">' + w.n + '</text>';
+  });
+
+  // подпись самой глубокой точки
+  const minIdx = line.indexOf(Math.min(...line));
+  if (line[minIdx] < 0) {
+    const lx = Math.min(Math.max(x(minIdx), pad.l + 54), W - pad.r - 54);
+    out += '<text x="' + lx + '" y="' + (y(line[minIdx]) + 20) + '" text-anchor="middle"'
+      + ' font-size="12" font-weight="600" fill="var(--critical)"'
+      + ' font-family="IBM Plex Mono, monospace">' + fmt(line[minIdx]) + '</text>';
+  }
+
+  svg.innerHTML = '<title id="chart-title">График остатка денежных средств по неделям</title>' + out;
+}
+
+function renderMoves() {
+  const box = document.getElementById("moves");
+  const candidates = DATA.rows
+    .filter(r => r.type === "Платёж" && r.priority === 3)
+    .filter(r => state.project === "__all__" || r.project === state.project)
+    .sort((a, b) => a.week - b.week || b.amount - a.amount);
+
+  if (!candidates.length) {
+    box.innerHTML = '<div class="empty">Платежей приоритета 3 в горизонте нет — '
+      + 'переносить без последствий нечего. Разрыв закрывается лимитом или переговорами '
+      + 'о сроках с подрядчиками.</div>';
+    return;
+  }
+
+  box.innerHTML = candidates.map(r => {
+    const on = !!state.moves[r.id];
+    const chosen = state.moves[r.id] || 2;
+    const opts = [1, 2, 3, 4].map(n =>
+      '<option value="' + n + '"' + (chosen === n ? " selected" : "") + '>'
+      + "+" + n + " нед." + '</option>').join("");
+    return '<div class="move' + (on ? " on" : "") + '">'
+      + '<input type="checkbox" id="mv-' + r.id + '" data-id="' + r.id + '"' + (on ? " checked" : "") + '>'
+      + '<label for="mv-' + r.id + '"><span class="who">' + r.contractor + '</span><br>'
+      + '<span class="what">' + (r.basis || r.article) + ' · неделя ' + r.week + ', ' + dmy(r.date) + '</span></label>'
+      + '<span class="amt">' + fmt(r.amount) + '</span>'
+      + '<select data-sel="' + r.id + '"' + (on ? "" : " disabled") + '>' + opts + '</select>'
+      + '</div>';
+  }).join("");
+}
+
+function render() {
+  const weeks = compute();
+  const s = summarize(weeks);
+  renderVerdict(s);
+  renderTiles(s);
+  renderChart(weeks);
+  renderTable(weeks);
+  renderMoves();
+  document.getElementById("balance-out").textContent = fmt(state.balance);
+}
+
+/* ---------- управление ---------- */
+function initControls() {
+  document.getElementById("company").textContent = DATA.company;
+  document.getElementById("m-horizon").textContent =
+    dmy(DATA.weeks[0].from) + " — " + dmy(DATA.weeks[DATA.weeks.length - 1].to);
+  document.getElementById("m-start").textContent = fmt(DATA.balance);
+  document.getElementById("m-credit").textContent = fmt(DATA.creditFree);
+  document.getElementById("m-date").textContent = dmy(DATA.calcDate);
+  document.getElementById("foot-source").textContent = "Источник: " + DATA.source;
+
+  const slider = document.getElementById("balance");
+  const lo = 0, hi = Math.max(DATA.balance * 3, 1000000);
+  slider.min = lo; slider.max = hi; slider.value = DATA.balance;
+  document.getElementById("balance-min").textContent = fmtShort(lo);
+  document.getElementById("balance-max").textContent = fmtShort(hi);
+  slider.addEventListener("input", (e) => {
+    state.balance = Number(e.target.value);
+    render();
+  });
+
+  const projects = Array.from(new Set(DATA.rows.map(r => r.project).filter(Boolean))).sort();
+  const sel = document.getElementById("project");
+  sel.innerHTML = '<option value="__all__">Все проекты</option>'
+    + projects.map(p => '<option value="' + p + '">' + p + '</option>').join("");
+  sel.addEventListener("change", (e) => { state.project = e.target.value; render(); });
+
+  document.getElementById("credit").addEventListener("change", (e) => {
+    state.credit = e.target.checked;
+    render();
+  });
+
+  document.getElementById("reset").addEventListener("click", () => {
+    state.balance = DATA.balance;
+    state.project = "__all__";
+    state.credit = false;
+    state.moves = {};
+    slider.value = DATA.balance;
+    sel.value = "__all__";
+    document.getElementById("credit").checked = false;
+    render();
+  });
+
+  document.getElementById("moves").addEventListener("change", (e) => {
+    const cb = e.target.closest('input[type="checkbox"]');
+    if (cb) {
+      const id = Number(cb.dataset.id);
+      if (cb.checked) state.moves[id] = state.moves[id] || 2;
+      else delete state.moves[id];
+      render();
+      return;
+    }
+    const sl = e.target.closest("select[data-sel]");
+    if (sl) {
+      state.moves[Number(sl.dataset.sel)] = Number(sl.value);
+      render();
+    }
+  });
+}
+
+initControls();
+render();
+</script>

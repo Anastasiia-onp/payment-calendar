@@ -1,0 +1,11 @@
+# результаты расчёта — пересобираются из исходных данных
+02_calc/
+03_output/
+04_dashboard/*.html
+!04_dashboard/*_demo.html
+
+# служебное
+__pycache__/
+*.pyc
+~$*.xlsx
+.DS_Store
