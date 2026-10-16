@@ -286,7 +286,7 @@ def _head(ws, row, col, text, width=None):
     return c
 
 
-def build_source_sheet(ws, rows, articles):
+def build_source_sheet(ws, rows, articles, bounds):
     """Сводный реестр — основа всех формул календаря."""
     ws.title = "Сводный реестр"
     ws.freeze_panes = "A2"
@@ -294,15 +294,19 @@ def build_source_sheet(ws, rows, articles):
     headers = [("Тип", 13), ("Проект", 24), ("Контрагент", 22), ("Основание", 30),
                ("Статья ДДС", 24), ("Сумма", 15), ("Дата", 13), ("Статус", 13),
                ("Приоритет", 10), ("Вид деятельности", 16), ("Источник", 16),
-               ("Комментарий", 30)]
+               ("Неделя", 9), ("Период недели", 18), ("Комментарий", 30)]
     for i, (name, width) in enumerate(headers, start=1):
         _head(ws, 1, i, name, width)
 
     for r, (row, source) in enumerate(rows, start=2):
         typ, project, contractor, basis, article, amount, due, status, comment = row
         prio, activity = articles.get(str(article), (None, None))
+        week = next((n for n, (a, b) in enumerate(bounds, start=1) if a <= due <= b), None)
+        period = "{a} - {b}".format(
+            a=bounds[week - 1][0].strftime("%d.%m"),
+            b=bounds[week - 1][1].strftime("%d.%m")) if week else ""
         values = [typ, project, contractor, basis, article, amount, due, status,
-                  prio, activity, source, comment]
+                  prio, activity, source, week, period, comment]
         for c, value in enumerate(values, start=1):
             cell = ws.cell(row=r, column=c, value=value)
             cell.border = BORDER
@@ -310,7 +314,7 @@ def build_source_sheet(ws, rows, articles):
                 cell.number_format = MONEY
             elif c == 7:
                 cell.number_format = DATE_FMT
-    ws.auto_filter.ref = "A1:L{n}".format(n=len(rows) + 1)
+    ws.auto_filter.ref = "A1:N{n}".format(n=len(rows) + 1)
     return len(rows) + 1
 
 
@@ -334,7 +338,9 @@ def build_calendar_sheet(ws, params, weeks_data, articles, used_articles, last_r
     ws.cell(row=4, column=1).border = BORDER
     for i, w in enumerate(weeks_data):
         col = 2 + i
-        _head(ws, 4, col, "{n}\n{a}".format(n=w["week"], a=w["from"].strftime("%d.%m")), 13)
+        # в шапке — весь период недели, иначе непонятно, какие дни попали в столбец
+        _head(ws, 4, col, "Неделя {n}\n{a} — {b}".format(
+            n=w["week"], a=w["from"].strftime("%d.%m"), b=w["to"].strftime("%d.%m")), 14)
         ws.cell(row=3, column=col, value=w["from"]).number_format = DATE_FMT
         ws.cell(row=3, column=col).font = Font(size=8, color="808080")
         ws.cell(row=3, column=col).alignment = Alignment(horizontal="center")
@@ -673,7 +679,8 @@ def build(path, import_paths=None):
 
     wb = Workbook()
     build_params_sheet(wb.active, params, notes, control)
-    last_row = build_source_sheet(wb.create_sheet(), good_sourced, articles)
+    last_row = build_source_sheet(wb.create_sheet(), good_sourced, articles,
+                                  week_bounds(start, params["weeks"]))
     build_calendar_sheet(wb.create_sheet(), params, weeks_data, articles, used, last_row)
     build_gaps_sheet(wb.create_sheet(), gaps, params)
 
